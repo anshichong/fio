@@ -41,7 +41,7 @@ static enum fio_q_status fio_fushionbsio_queue(struct thread_data *td,
 					  struct io_u *io_u)
 {
 	struct fio_file *f = io_u->file;
-	struct BlobID* blob_id = f->engine_data;
+	struct BlobID *blob_id = f->engine_data;
 	int ret;
 
 	fio_ro_check(td, io_u);
@@ -107,7 +107,7 @@ static int fio_fushionbsio_open_file(struct thread_data *td,
 					  struct io_u *io_u)
 {
 	struct fio_file *f = io_u->file;
-	struct BlobID* ret;
+	struct BlobID *ret;
 
 	ret = OpenBlob("1", f->fileno, 2);
 	if (ret == NULL)
@@ -123,7 +123,7 @@ static int fio_fushionbsio_close_file(struct thread_data *td,
 					  struct io_u *io_u)
 {
 	struct fio_file *f = io_u->file;
-	struct BlobID* blob_id = f->engine_data;
+	struct BlobID *blob_id = f->engine_data;
 	int ret;
 
 	ret = CloseBlob(blob_id);
