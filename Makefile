@@ -91,6 +91,9 @@ ifdef CONFIG_LIBNFS
   SOURCE += engines/nfs.c
 endif
 
+  LIBS += -lfushion
+  SOURCE += engines/fushionbsio.c
+
 ifdef CONFIG_64BIT
   CPPFLAGS += -DBITS_PER_LONG=64
 else ifdef CONFIG_32BIT

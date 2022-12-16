@@ -19,49 +19,23 @@
 #include "../lib/memalign.h"
 #include "cmdprio.h"
 #include "../lib/rand.h"
-#include "libfushion.h"
+#include "libcfushion.h"
+
+#define LAST_POS(f)	((f)->engine_pos)
 
 struct fushionbsio_data {
-	io_context_t aio_ctx;
-	struct io_event *aio_events;
-	struct iocb **iocbs;
+	struct iovec *iovecs;
 	struct io_u **io_us;
-
-	struct io_u **io_u_index;
-	int is_pow2;
-	unsigned int entries;
 	unsigned int queued;
-	unsigned int head;
-	unsigned int tail;
+	unsigned int events;
+	unsigned long queued_bytes;
 
-	struct cmdprio cmdprio;
+	unsigned long long last_offset;
+	struct fio_file *last_file;
+	enum fio_ddir last_ddir;
+
+	struct frand_state rand_state;
 };
-
-static enum fio_q_status fio_fushionbsio_queue(struct thread_data *td,
-					  struct io_u *io_u)
-{
-	struct fio_file *f = io_u->file;
-	struct BlobID *blob_id = f->engine_data;
-	int ret;
-
-	fio_ro_check(td, io_u);
-
-	if (io_u->ddir == DDIR_READ)
-		/*ret = read(f->fd, io_u->xfer_buf, io_u->xfer_buflen);*/
-		ret = ReadBlob(blob_id, io_u->xfer_buf, io_u->offset, io_u->xfer_buflen)
-	else if (io_u->ddir == DDIR_WRITE)
-		/*ret = write(f->fd, io_u->xfer_buf, io_u->xfer_buflen);*/
-		ret = WriteBlob(blob_id, io_u->xfer_buf, io_u->xfer_buflen, 0)
-	else if (io_u->ddir == DDIR_TRIM) {
-		/*do_io_u_trim(td, io_u);*/
-		DeleteBlob(blob_id)
-		return FIO_Q_COMPLETED;
-	} else
-		/*ret = do_io_u_sync(td, io_u);*/
-		ret = SyncBlob(blob_id)
-
-	return fio_io_end(td, io_u, ret);
-}
 
 static int fio_io_end(struct thread_data *td, struct io_u *io_u, int ret)
 {
@@ -85,6 +59,32 @@ static int fio_io_end(struct thread_data *td, struct io_u *io_u, int ret)
 	return FIO_Q_COMPLETED;
 }
 
+static enum fio_q_status fio_fushionbsio_queue(struct thread_data *td,
+					  struct io_u *io_u)
+{
+	struct fio_file *f = io_u->file;
+	struct BlobID *blob_id = f->engine_data;
+	int ret;
+
+	fio_ro_check(td, io_u);
+
+	if (io_u->ddir == DDIR_READ)
+		/*ret = read(f->fd, io_u->xfer_buf, io_u->xfer_buflen);*/
+		ret = ReadBlob(blob_id, io_u->xfer_buf, io_u->offset, io_u->xfer_buflen, NULL);
+	else if (io_u->ddir == DDIR_WRITE)
+		/*ret = write(f->fd, io_u->xfer_buf, io_u->xfer_buflen);*/
+		ret = WriteBlob(blob_id, io_u->xfer_buf, io_u->xfer_buflen, 0, NULL);
+	else if (io_u->ddir == DDIR_TRIM) {
+		/*do_io_u_trim(td, io_u);*/
+		DeleteBlob(blob_id);
+		return FIO_Q_COMPLETED;
+	} else
+		/*ret = do_io_u_sync(td, io_u);*/
+		ret = SyncBlob(blob_id);
+
+	return fio_io_end(td, io_u, ret);
+}
+
 static int fio_fushionbsio_prep(struct thread_data *td, struct io_u *io_u)
 {
 	struct fio_file *f = io_u->file;
@@ -103,13 +103,13 @@ static int fio_fushionbsio_prep(struct thread_data *td, struct io_u *io_u)
 	return 0;
 }
 
-static int fio_fushionbsio_open_file(struct thread_data *td,
+int fio_fushionbsio_open_file(struct thread_data *td,
 					  struct io_u *io_u)
 {
 	struct fio_file *f = io_u->file;
 	struct BlobID *ret;
 
-	ret = OpenBlob("1", f->fileno, 2);
+	ret = OpenBlobFS("1", f->fileno, 2);
 	if (ret == NULL)
 	{
 		return -1;
@@ -119,7 +119,7 @@ static int fio_fushionbsio_open_file(struct thread_data *td,
 
 }
 
-static int fio_fushionbsio_close_file(struct thread_data *td,
+int fio_fushionbsio_close_file(struct thread_data *td,
 					  struct io_u *io_u)
 {
 	struct fio_file *f = io_u->file;
@@ -138,7 +138,7 @@ static struct ioengine_ops ioengine = {
 	.prep			= fio_fushionbsio_prep,
 	.queue			= fio_fushionbsio_queue,
 	.open_file		= fio_fushionbsio_open_file,
-	.close_file		= fio_fushionbsio_close_file
+	.close_file		= fio_fushionbsio_close_file,
 };
 
 static void fio_init fio_fushionbsio_register(void)
