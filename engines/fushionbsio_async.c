@@ -46,7 +46,7 @@ struct fushionbsio_async_data {
 	enum fio_ddir last_ddir;
 
 	struct frand_state rand_state;
-	io_context_t aio_ctx;
+	//io_context_t aio_ctx;
 	struct io_u **aio_events;
 
 	int is_pow2;
@@ -153,7 +153,7 @@ static enum fio_q_status fio_fushionbsio_async_queue(struct thread_data fio_unus
 	else
 		ret = EINVAL;
 
-	if (ret < 0 || ret = EINVAL) {
+	if (ret < 0 || ret == EINVAL) {
 	log_err("fushionbsio async queue failed.\n");
 	io_u->error = ret;
 	goto failed;

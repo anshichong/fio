@@ -93,6 +93,7 @@ endif
 
   LIBS += -lfushion
   SOURCE += engines/fushionbsio.c
+  SOURCE += engines/fushionbsio_async.c
 
 ifdef CONFIG_64BIT
   CPPFLAGS += -DBITS_PER_LONG=64
