@@ -131,6 +131,30 @@ int fio_fushionbsio_close_file(struct thread_data *td,
 	return 0;
 }
 
+static int fio_fushionbsio_init(struct thread_data *td)
+{
+	struct fushionbsio_data *ld;
+	//struct fushionbsio_options *o = td->eo;
+	int ret;
+
+	ld = calloc(1, sizeof(*ld));
+
+	/*ld->entries = td->o.iodepth;
+	ld->is_pow2 = is_power_of_2(ld->entries);
+	ld->aio_events = calloc(ld->entries, sizeof(struct io_u *));*/
+
+
+	td->io_ops_data = ld;
+
+	ret = Init("/etc/fio/config");
+	if (ret) {
+		td_verror(td, EINVAL, "fio_fushionbsio_init");
+		return 1;
+	}
+
+	return 0;
+}
+
 static struct ioengine_ops ioengine = {
 	.name			= "fushionbsio",
 	.version		= FIO_IOOPS_VERSION,
@@ -139,6 +163,7 @@ static struct ioengine_ops ioengine = {
 	.queue			= fio_fushionbsio_queue,
 	.open_file		= fio_fushionbsio_open_file,
 	.close_file		= fio_fushionbsio_close_file,
+	.init			= fio_fushionbsio_init,
 };
 
 static void fio_init fio_fushionbsio_register(void)

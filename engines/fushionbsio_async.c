@@ -182,7 +182,8 @@ static int fio_fushionbsio_async_init(struct thread_data *td)
 
 	td->io_ops_data = ld;
 
-	ret = fio_cmdprio_init(td, &ld->cmdprio, &o->cmdprio_options);
+	//ret = fio_cmdprio_init(td, &ld->cmdprio, &o->cmdprio_options);
+	ret = Init("/etc/fio/config");
 	if (ret) {
 		td_verror(td, EINVAL, "fio_fushionbsio_async_init");
 		return 1;
